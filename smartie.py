@@ -1,59 +1,54 @@
 import argparse, serial, time
 
-parser = argparse.ArgumentParser()
-parser.add_argument('-b', '--backlight')
-parser.add_argument('-c', '--contrast', type=int)
-parser.add_argument('-l', '--line', type=int)
-parser.add_argument('message', nargs='?')
-args = parser.parse_args()
+TTY_PATH = '/dev/ttyUSB0'
+DELAY = 0.04
 
-tty_path = '/dev/ttyUSB0'
+class Smartie(object):
+  def __init__(self, path=TTY_PATH):
+    self.lcd = serial.Serial(path, 9600)
 
-lcd = serial.Serial(tty_path, 9600)
-  # serial.EIGHTBITS,
-  # serial.PARITY_NONE,
-  # serial.STOPBITS_ONE,
-  # timeout = 5,
-  # rtscts = False)
+    # Set custom char '0'
+    # ser.write(chr(0xFE)+chr(0x4E)+0+'0x15 0x15 0x15 0x15 0x15 0x15 0x1f 0')
 
-  # lcd.open()
-  # lcd.isOpen()
+  def command(self, cmd):
+    cmd_str = b''.join([b'\xFE'] + cmd)
 
-delay = 0.04
+    self.lcd.write(cmd_str)
+    time.sleep(DELAY)
 
-# Set custom char '0'
-# ser.write(chr(0xFE)+chr(0x4E)+0+'0x15 0x15 0x15 0x15 0x15 0x15 0x1f 0')
+  def backlight_on(self):
+    self.command([b'\x42', b'\x00'])
 
-def command(cmd):
-  cmd_str = b''.join([b'\xFE'] + cmd)
+  def backlight_off(self):
+    self.command([b'\x46'])
 
-  lcd.write(cmd_str)
-  time.sleep(delay)
+  def set_contrast(self, amount):
+    self.command([b'\x50', chr(amount).encode()])
 
-def backlight_on():
-  command([b'\x42', b'\x00'])
+  def write_line(self, data, line=1):
+    if line is None or line < 1 or line > 4:
+      line = 1
 
-def backlight_off():
-  command([b'\x46'])
+    data = data.ljust(20)[:20]
+    self.command([b'\x47', b'\x01', chr(line).encode(), data.encode()])
 
-def set_contrast(amount):
-  command([b'\x50', chr(amount).encode()])
+if __name__ == '__main__':
+  parser = argparse.ArgumentParser()
+  parser.add_argument('-b', '--backlight')
+  parser.add_argument('-c', '--contrast', type=int)
+  parser.add_argument('-l', '--line', type=int)
+  parser.add_argument('message', nargs='?')
+  args = parser.parse_args()
 
-def write_line(data, line=1):
-  if line is None or line < 1 or line > 4:
-    line = 1
-  data = data.ljust(20)[:20]
+  smartie = Smartie()
 
-  command([b'\x47', b'\x01', chr(line).encode(), data.encode()])
+  if args.backlight == 'on':
+    smartie.backlight_on()
+  elif args.backlight == 'off':
+    smartie.backlight_off()
 
+  if args.contrast:
+    smartie.set_contrast(args.contrast)
 
-if args.backlight == 'on':
-  backlight_on()
-elif args.backlight == 'off':
-  backlight_off()
-
-if args.contrast:
-  set_contrast(args.contrast)
-
-if args.message:
-  write_line(args.message, args.line)
+  if args.message:
+    smartie.write_line(args.message, args.line)
