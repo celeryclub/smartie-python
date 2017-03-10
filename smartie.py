@@ -1,4 +1,4 @@
-import argparse, serial, time
+import argparse, serial, time, unicodedata
 
 TTY_PATH = '/dev/ttyUSB0'
 DELAY = 0.04
@@ -29,8 +29,12 @@ class Smartie(object):
     if line is None or line < 1 or line > 4:
       line = 1
 
+    data = unicode(data, 'utf8')
+    data = unicodedata.normalize('NFKD', data)
+    data = data.encode('ascii', 'ignore')
     data = data.ljust(20)[:20]
-    self.command([b'\x47', b'\x01', chr(line).encode(), data.encode()])
+
+    self.command([b'\x47', b'\x01', chr(line).encode(), data])
 
 if __name__ == '__main__':
   parser = argparse.ArgumentParser()
