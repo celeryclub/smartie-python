@@ -29,7 +29,7 @@ class Smartie(object):
     if line is None or line < 1 or line > 4:
       line = 1
 
-    data = unicode(data, 'utf8')
+    data = unicode(data)
     data = unicodedata.normalize('NFKD', data)
     data = data.encode('ascii', 'ignore')
     data = data.ljust(20)[:20]
