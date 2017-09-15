@@ -36,6 +36,12 @@ class Smartie(object):
 
     self.command([b'\x47', b'\x01', chr(line).encode(), data])
 
+  def clear_screen(self):
+    self.write_line('', 1)
+    self.write_line('', 2)
+    self.write_line('', 3)
+    self.write_line('', 4)
+
 if __name__ == '__main__':
   parser = argparse.ArgumentParser()
   parser.add_argument('-b', '--backlight')
